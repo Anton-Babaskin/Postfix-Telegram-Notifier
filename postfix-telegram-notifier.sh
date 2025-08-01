@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -eu
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Install.sh — ставит Postfix→Telegram tail-F-демон
