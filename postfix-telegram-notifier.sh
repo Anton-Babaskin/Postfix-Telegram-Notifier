@@ -78,23 +78,34 @@ STATE_INODE=/var/lib/postfix-telegram-notify/lastpos.inode
 ERROR_LOG=/var/log/postfix-telegram-notify.log
 HOSTNAME=$(hostname -f)
 
-# ensure state files
+# ensure state files exist
 mkdir -p "$(dirname "$STATE_FILE")"
 touch "$STATE_FILE" "$STATE_INODE"
 
-last=$(<"$STATE_FILE" 2>/dev/null || echo 0)
+# 1) primary initialization: seed and exit if STATE_FILE empty
+if [[ ! -s "$STATE_FILE" ]]; then
+  stat -c %i "$LOG_FILE" > "$STATE_INODE"
+  wc -l < "$LOG_FILE"   > "$STATE_FILE"
+  exit 0
+fi
+
+last=$(<"$STATE_FILE")
 [[ $last =~ ^[0-9]+$ ]] || last=0
 
-# rotation
+# 2) handle rotation: only notify if saved_inode non-empty
 current_inode=$(stat -c %i "$LOG_FILE" 2>/dev/null)
 saved_inode=$(<"$STATE_INODE" 2>/dev/null || echo)
 if [[ $current_inode != $saved_inode ]]; then
-  send_telegram "🔄 Log file rotated @ $HOSTNAME"
-  last=0
+  if [[ -n "$saved_inode" ]]; then
+    send_telegram "🔄 Log file rotated @ $HOSTNAME"
+  fi
   echo "$current_inode" > "$STATE_INODE"
+  wc -l < "$LOG_FILE"   > "$STATE_FILE"
+  exit 0
 fi
 
-total=$(wc -l <"$LOG_FILE")
+# 3) process new lines
+total=$(wc -l < "$LOG_FILE")
 (( total <= last )) && exit 0
 
 tail -n +"$((last+1))" "$LOG_FILE" | \
@@ -102,7 +113,7 @@ awk '/postfix\/(smtp|local|lmtp|bounce)/ && ( /status=(bounced|deferred)/ || /NO
 while read -r line; do
   timestamp=$(echo "$line" | cut -d' ' -f1-3)
   if [[ $line =~ NOQUEUE:\ reject: ]]; then
-    to=$(echo "$line" | grep -oP 'to=<\K[^>]+' || echo "N/A")
+    to=$(echo "$line" | grep -oP 'to=<\K[^>]+'        || echo "N/A")
     reason=$(echo "$line" | sed -n 's/.*reject: \(.*\)/\1/p' || echo "N/A")
     send_telegram "⛔ Rejected @ $HOSTNAME\nTime: $timestamp\nTo: $to\nReason: $reason"
   else
@@ -113,6 +124,7 @@ while read -r line; do
   fi
 done
 
+# 4) update state
 echo "$total" > "$STATE_FILE"
 EOF
 chmod 755 "${BIN_DIR}/postfix-telegram-notify.sh"
