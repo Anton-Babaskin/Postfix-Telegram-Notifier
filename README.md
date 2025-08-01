@@ -33,7 +33,7 @@ A Bash script to monitor Postfix mail delivery statuses (`sent`, `bounced`, `def
 
 1. Clone the repo:  
     ```bash
-    git clone https://github.com/{username}/postfix-telegram-notifier.git
+    git clone https://github.com/Anton-Babaskin/postfix-telegram-notifier.git
     cd postfix-telegram-notifier
     ```
 2. Run installer:  
