@@ -52,12 +52,10 @@ BOT_TOKEN="${BOT_TOKEN}"
 CHAT_ID="${CHAT_ID}"
 
 send_telegram() {
-  local msg uri
-  msg="\$1"
-  uri=\$(jq -sRr @uri <<<"\$msg")
+  local msg="\$1"
   curl -fsSL --retry 3 --max-time 10 \\
     --data-urlencode "chat_id=\$CHAT_ID" \\
-    --data-urlencode "text=\$uri" \\
+    --data-urlencode "text=\$msg" \\
     "https://api.telegram.org/bot\$BOT_TOKEN/sendMessage" \\
     | jq -e '.ok' >/dev/null || {
       echo "\$(date): Failed to send message: \$msg" >> "${ERROR_LOG}"
