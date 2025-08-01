@@ -38,7 +38,7 @@ A Bash script to monitor Postfix mail delivery statuses (`sent`, `bounced`, `def
     ```
 2. Run installer:  
     ```bash
-    sudo bash install.sh
+    sudo bash postfix-telegram-notifier.sh
     ```
 3. Enter **Bot Token** and **Chat ID** when prompted.  
 4. Verify timer:  
