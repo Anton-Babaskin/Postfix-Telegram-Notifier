@@ -103,4 +103,4 @@ EOF
 systemctl daemon-reload
 systemctl enable --now postfix-telegram-notify.service
 
-echo "Установлено! Демон запущен и следит за $LOG"
+echo "Установлено! Демон запущен и следит за /var/log/mail.log"
